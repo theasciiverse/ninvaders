@@ -21,10 +21,22 @@
  *
  */
 
- 
+
 #include "aliens.h"
 #include "player.h"
 #include "nInvaders.h"
+
+Aliens aliens;
+
+int lowest_ship[ALIENS_MAX_NUMBER_X];
+int alienshotx[ALIENS_MAX_MISSILES];
+int alienshoty[ALIENS_MAX_MISSILES];
+int alienshotnum;
+int alienBlock[ALIENS_MAX_NUMBER_Y][ALIENS_MAX_NUMBER_X];
+
+int bunker[BUNKERHEIGHT][BUNKERWIDTH + 1];
+
+int shipnum;
 
 /**
  * initialize aliens attributes
@@ -32,7 +44,7 @@
 void aliensReset()
 {
 	int i,j;
-	
+
 	// three different types of aliens [5], [10]
 	int level[ALIENS_MAX_NUMBER_Y][ALIENS_MAX_NUMBER_X]={
 		{1,1,1,1,1,1,1,1,1,1},
@@ -43,7 +55,7 @@ void aliensReset()
 	};
 
 	aliensClear(aliens.posX, aliens.posY, aliens.right, aliens.bottom);	// clear old position of aliens
-	
+
 	// reset alien position
 	aliens.posX = 0;
 	aliens.posY = 0;
@@ -51,14 +63,14 @@ void aliensReset()
 	aliens.bottom = 0;
 	aliens.left = 0;
 	aliens.speed = 1;
-	
-	// copy level-array to enemy-array 
+
+	// copy level-array to enemy-array
 	for (i=0;i<ALIENS_MAX_NUMBER_X;i++) {
 		for (j=0;j<ALIENS_MAX_NUMBER_Y;j++) {
 			alienBlock[j][i]=level[j][i];
 		}
 	}
-	
+
 	// reset missiles
 	for (i = 0; i < ALIENS_MAX_MISSILES; i++) {
 		if (alienshotx[i] != 0) {
@@ -100,9 +112,9 @@ void bunkersReset()
 				bunker[b][a] = 0;
 		}
 	}
-	
+
 	// display bunkers sprite
-	bunkersDisplay(&bunker[0][0]);	
+	bunkersDisplay(&bunker[0][0]);
 }
 
 /**
@@ -111,62 +123,62 @@ void bunkersReset()
  */
 int aliensMove()
 {
-	
+
 	int cx,cy;
 	int fReachedPlayer=0; 				// return value
 
-	render();	
+	render();
 	aliensClear(aliens.posX, aliens.posY, aliens.right, aliens.bottom);	// clear old position of aliens
 
 	aliens.posX = aliens.posX + aliens.speed;			// move aliens left/ right
-	
+
 	// when aliens reached left or right screen-border
 	if (aliens.posX == (BUNKERWIDTH + BUNKERX - 5 - aliens.right) || aliens.posX == (BUNKERX + aliens.left)) {
-		
+
 		aliens.posY++;				// move aliens downwards
-		
+
 		// aliens reached player
 		if (aliens.posY == SCREENHEIGHT - 2 - aliens.bottom) {
 			fReachedPlayer = 1;		// set return value
 		}
-		
+
 		// aliens reached bunkers //funzt nicht ganz: todo
 		if (aliens.posY == BUNKERY - aliens.bottom) {
 			// clear bunkers
 			for(cx=0;cx<BUNKERWIDTH;cx++) {
-				for(cy=0;cy<BUNKERHEIGHT;cy++) { 
-					bunker[cy][cx]=0;	
+				for(cy=0;cy<BUNKERHEIGHT;cy++) {
+					bunker[cy][cx]=0;
 				}
 			}
 			bunkersClear();	// clear bunkers sprites
 		}
-		
+
 		aliens.speed = aliens.speed * (-1);		  // change direction of aliens' movements
 	}
 
 	aliensDisplay(aliens.posX, aliens.posY, aliens.right, aliens.bottom); // display aliens at new position
-	
+
 	return fReachedPlayer;				  // return if aliens reached player
 }
 
 
 /**
- * display alien animation, display remaining parts of aliens and bunker 
+ * display alien animation, display remaining parts of aliens and bunker
  */
 void render()
 {
 	int k,row;
 	int c=0;
 
-	// calculate left, right, bottom, lowest_ship	
+	// calculate left, right, bottom, lowest_ship
 	aliens.left=1;
 	aliens.right=-1;
 	aliens.bottom=-1;
 	shipnum=0;
-	for (k=0;k<11;k++) {
+	for (k=0;k<ALIENS_MAX_NUMBER_X;k++) {
 		lowest_ship[k]=-1;
 	}
-	
+
 	for (row=0;row<ALIENS_MAX_NUMBER_Y*2;row++) {
 		if ((row%2)==0){
 			for (k=0;k<ALIENS_MAX_NUMBER_X;k++) {
@@ -176,7 +188,7 @@ void render()
 					if (aliens.left==1 || -k>aliens.left) {aliens.left=-k;}
 					if (aliens.right==-1 || k>aliens.right) {aliens.right=k;}
 					if (aliens.bottom==-1 || c>aliens.bottom) {aliens.bottom=c;}
-				} 
+				}
 			}
 		} else {
 			c++;
@@ -185,7 +197,7 @@ void render()
 	aliens.bottom=aliens.bottom*2;	// every 2nd row is an empty row
 	aliens.left=aliens.left*3; // alien sprite is 3 chars wide
 	aliens.right=aliens.right*3; // alien sprite is 3 chars wide
-	
+
 	// display remaining aliens with animation
 	aliensRefresh(level, &alienBlock[0][0]);
 
@@ -203,39 +215,39 @@ int aliensMissileMove()
 	int shootThreshold;
 	static int alienshot_counter = 0;
 
-	
+
 	// calculate threshold when next missile should be fired
-	// it is done here to save calculation time in for-instruction 
+	// it is done here to save calculation time in for-instruction
 	shootThreshold = (skill_level * 8) * (shipnum + 2);
 	alienshot_counter = alienshot_counter + 10 ;
-	
+
 	// loop all possible missiles
 	for (i = 0; i < ALIENS_MAX_MISSILES; i++) {
-		
+
 		// if the current missile is flying we should do movements
 		if (alienshotx[i] != 0) {
-			
+
 			aliensMissileClear(alienshotx[i],alienshoty[i]);	// clear old position
-				
-			// if missile hit the bunkers	
+
+			// if missile hit the bunkers
 			if (bunkersHitCheck(alienshotx[i], alienshoty[i]) == 1) {
 				alienshotx[i] = 0;		// value of zero reloads missile
 			}
-			
+
 			alienshoty[i]++;			// move missile downwards
-			
+
 			// check if player was hit by an alien missile
 			if (playerHitCheck(alienshotx[i], alienshoty[i]) == 1) {
 				alienshotx[i] = 0;		// value of zero reloads missile
 				fPlayerWasHit = 1;
 			}
-			
-			
+
+
 		} else {					// missile not launched yet
-			
+
 			// start new missile if counter says so
 			if (alienshot_counter > shootThreshold && shipnum > 0) {// only shot if there's an alien left
-				alienshot_counter = 0;				// reset counter				
+				alienshot_counter = 0;				// reset counter
 				tmp = random() % ALIENS_MAX_NUMBER_X;  		// randomly select one of the ...
 				while (lowest_ship[tmp] == -1) {		// ...aliens at the bottom of ...
 					tmp = random() % ALIENS_MAX_NUMBER_X;	// ...a column to launch missile
@@ -243,18 +255,18 @@ int aliensMissileMove()
 				alienshoty[i]=aliens.posY+lowest_ship[tmp];		// set y position of missile
 				alienshotx[i]=aliens.posX+tmp*3;			// set x position of missile
 			}
-		} // if 
-		
+		} // if
+
 		// display missiles if still running or just launched; could have been modified in the above code
 		if (alienshotx[i] != 0) {
-			// if missile is out of battlefield 
+			// if missile is out of battlefield
 			if (alienshoty[i] == SCREENHEIGHT - 1) {
-				alienshotx[i] = 0;	// reload missile	
+				alienshotx[i] = 0;	// reload missile
 			} else {
 				aliensMissileDisplay(alienshotx[i], alienshoty[i]); // display Missile at new position
 			}
-		}		
-		
+		}
+
 	} // for
 
 
@@ -270,7 +282,7 @@ int aliensHitCheck(int shotx, int shoty)
 {
 	int alienType = 0;
 	int shipx, shipy;
-	// if missile is within alien-rectangle 
+	// if missile is within alien-rectangle
 	if (shotx >= aliens.posX && shotx <= aliens.posX + ALIENS_MAX_NUMBER_X * 3 - 1
 	    && shoty >= aliens.posY && shoty <= aliens.posY + (ALIENS_MAX_NUMBER_Y - 1) * 2) {
 		// calculate the ship that was hit
@@ -296,7 +308,7 @@ int bunkersHitCheck(int shotx, int shoty)
 	if (shotx >= BUNKERX && shotx < BUNKERX + BUNKERWIDTH
 	    && shoty >= BUNKERY && shoty < BUNKERY + BUNKERHEIGHT) {
 		// calculate the element of the bunker that was hit
-		adjy = shoty - BUNKERY; 
+		adjy = shoty - BUNKERY;
 		adjx = shotx - BUNKERX;
 		// if there is still an element
 		if(bunker[adjy][adjx] == 1){

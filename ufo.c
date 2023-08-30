@@ -20,13 +20,15 @@
  * mailto: ninvaders-devel@lists.sourceforge.net
  *
  */
- 
+
 
 #include "ufo.h"
 #include "aliens.h"
 #include "nInvaders.h"
 
 static int fShowUfo = 0;
+
+Ufo ufo;
 
 /**
  * initialize ufo attributes
@@ -57,7 +59,7 @@ static void ufoMove(int posX)
  */
 void ufoMoveLeft()
 {
-	// check if space between ufo and screen border is big enough 
+	// check if space between ufo and screen border is big enough
 	if (ufo.posX > 1) {
 		// desired movement is possible
 		ufoMove(ufo.posX - 1);
@@ -87,7 +89,7 @@ int ufoShowUfo()
 int ufoHitCheck(int shotX, int shotY)
 {
 	int fUfoWasHit = 0;
-	
+
 	// if shot reached vertikal position of ufo
 	if (shotY == UFOPOSY) {
 		// if shot hits ufo
@@ -96,6 +98,6 @@ int ufoHitCheck(int shotX, int shotY)
 			fUfoWasHit = 1;
 		}
 	}
-	
+
 	return fUfoWasHit;
 }

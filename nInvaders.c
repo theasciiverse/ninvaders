@@ -32,9 +32,13 @@
 
 #define FPS 50
 
+// todo: let's try to not having to declare these "public"
 int lives;
 long score;
 int status; // status handled in timer
+int weite;
+int level;
+int skill_level;
 
 #define GAME_LOOP 1
 #define GAME_NEXTLEVEL 2
@@ -61,11 +65,11 @@ static void initLevel()
 
 
 /**
- * evaluate command line parameters 
+ * evaluate command line parameters
  */
 static void evaluateCommandLine(int argc, char **argv)
 {
-	
+
 	// -l : set skill level
 	if (argc == 3 && strcmp(argv[1], "-l") == 0) {
 		if (argv[2][0] >= '0' && argv[2][0] <= '9') {
@@ -93,12 +97,12 @@ static void finish(int sig)
 {
         endwin();
 	showGplShort();
-	
+
 	fprintf(stderr,"\n");
 	fprintf(stderr,"\n");
 	fprintf(stderr,"=========================================================================\n");
 	fprintf(stderr,"\n");
-	
+
 	fprintf(stderr,"Final score: %7.7ld, Final level: %2.2d\nFinal rating... ",score,level);
 	if (lives>0)
 		fprintf(stderr,"Quitter\n\n");
@@ -116,7 +120,7 @@ static void finish(int sig)
 		fprintf(stderr,"Earth Defender\n\n");
 	else if(score>19999)
 		fprintf(stderr,"Supreme Protector\n\n");
-	
+
 	showVersion();
         exit(0);
 }
@@ -146,7 +150,7 @@ void readInput()
 			status = GAME_LOOP;
 		}
 		break;
-		       
+
 	case GAME_HIGHSCORE:
 
 		if (ch == ' ') {
@@ -173,7 +177,7 @@ void readInput()
 			}
 			playerMoveRight();		// move player
 			lastmove = 'l';			// remember last move for turbo mode
-		} else if (ch == 'h' || ch == KEY_LEFT) {	// move player left 
+		} else if (ch == 'h' || ch == KEY_LEFT) {	// move player left
 			if (lastmove == 'h') {
 				playerTurboOn();	// enable Turbo
 			} else {
@@ -198,60 +202,60 @@ void readInput()
 		}
 
 	} // switch
-	
+
 }
-	
-	
+
+
 /**
  * timer
- * this method is executed every 1 / FPS seconds  
+ * this method is executed every 1 / FPS seconds
  */
 void handleTimer()
 {
-	static int aliens_move_counter = 0; 
+	static int aliens_move_counter = 0;
 	static int aliens_shot_counter = 0;
 	static int player_shot_counter = 0;
 	static int ufo_move_counter = 0;
 	static int title_animation_counter = 0;
 	static int game_over_counter = 0;
-	
+
 	switch (status) {
-		 
+
 	case GAME_NEXTLEVEL:    // go to next level
-		
+
 		level++;	// increase level
 
 		initLevel();	// initialize level
-		
-		aliens_move_counter = 0; 
+
+		aliens_move_counter = 0;
 		aliens_shot_counter = 0;
 		player_shot_counter = 0;
 		ufo_move_counter = 0;
-		
+
 		weite = (shipnum+(skill_level*10)-(level*5)+5)/10;
-		
+
 		if (weite < 0) {
 			weite = 0;
 		}
-		
+
 		// change status and start game!
 		status = GAME_LOOP;
 
 	case GAME_LOOP:   	 // do game handling
-		
-		// move aliens			
+
+		// move aliens
 		if (aliens_move_counter == 0 && aliensMove() == 1) {
 			// aliens reached player
 			lives = 0;
 			status = GAME_OVER;
 		}
-		
-		// move player missile			
+
+		// move player missile
 		if (player_shot_counter == 0 && playerMoveMissile() == 1) {
 			// no aliens left
 			status = GAME_NEXTLEVEL;
 		}
-		
+
 		// move aliens' missiles
 		if (aliens_shot_counter == 0 && aliensMissileMove() == 1) {
 			// player was hit
@@ -262,24 +266,24 @@ void handleTimer()
 				status = GAME_OVER;		// ... exit game
 			}
 		}
-		
+
 		// move ufo
 		if (ufo_move_counter == 0 && ufoShowUfo() == 1) {
 			ufoMoveLeft();			// move it one position to the left
 		}
-		
-		
+
+
 		if (aliens_shot_counter++ >= 5) {aliens_shot_counter=0;}     // speed of alien shot
 		if (player_shot_counter++ >= 1) {player_shot_counter=0;}     // speed of player shot
 		if (aliens_move_counter++ >= weite) {aliens_move_counter=0;} // speed of aliend
 		if (ufo_move_counter++ >= 3) {ufo_move_counter=0;}           // speed of ufo
-		
+
 		refreshScreen();
 		break;
-		
+
 	case GAME_PAUSED:    // game is paused
 		break;
-		
+
 	case GAME_OVER:      // game over
 		if (game_over_counter == 100) {
 			battleFieldClear();
@@ -290,11 +294,11 @@ void handleTimer()
 			game_over_counter++;
 		}
 		break;
-		
+
 	case GAME_EXIT:      // exit game
 		finish(0);
 		break;
-		
+
 	case GAME_HIGHSCORE: // display highscore
 		if (title_animation_counter == 0) {
 			titleScreenDisplay();
@@ -302,7 +306,7 @@ void handleTimer()
 
 		if (title_animation_counter++ >= 6) {title_animation_counter = 0;} // speed of animation
 		break;
-		
+
 	}
 }
 
@@ -319,7 +323,7 @@ void setUpTimer()
 	myTimer.it_interval.tv_sec = 0;
 	myTimer.it_interval.tv_usec = 1000000 / FPS;
 	setitimer(ITIMER_REAL, &myTimer, NULL);
-	
+
 	myAction.sa_handler = &handleTimer;
 	myAction.sa_flags = SA_RESTART;
 	sigaction(SIGALRM, &myAction, NULL);
@@ -336,9 +340,9 @@ int main(int argc, char **argv)
 
 	evaluateCommandLine(argc, argv);	// evaluate command line parameters
 	graphicEngineInit();			// initialize graphic engine
-	
+
 	// set up timer/ game handling
-	setUpTimer();		
+	setUpTimer();
 	status = GAME_HIGHSCORE;
 
 	// read keyboard input
@@ -346,7 +350,7 @@ int main(int argc, char **argv)
 		// do movements and key-checking
 		readInput();
 	} while (0 == 0);
-	
+
 	return 0;
 }
 
@@ -354,14 +358,14 @@ int main(int argc, char **argv)
 void doScoring(int alienType)
 {
 	int points[4] = {500, 200, 150, 100};   	// 0: ufo, 1:red, 2:green, 3:blue
-	
+
 	score += points[alienType];		// every alien type does different scoring points
-	
+
 	// every 6000 pts player gets a new live
 	if (score % 6000 == 0){
 		lives++;
 	}
-	
+
 	drawscore();	// display score
 }
 

@@ -210,7 +210,7 @@ void readInput()
  * timer
  * this method is executed every 1 / FPS seconds
  */
-void handleTimer()
+void handleTimer(int _sig)
 {
 	static int aliens_move_counter = 0;
 	static int aliens_shot_counter = 0;

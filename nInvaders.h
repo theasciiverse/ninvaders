@@ -31,6 +31,10 @@
 #ifndef NINVADERS
 #define NINVADERS
 
+#ifdef _WIN32
+#define random() rand()		/* Windows has no BSD random() */
+#endif
+
 #define UFO_ALIEN_TYPE   0
 #define RED_ALIEN_TYPE   1
 #define GREEN_ALIEN_TYPE 2

@@ -36,6 +36,7 @@
 
 
 #ifdef WIN32
+#include <windows.h>
 #define usleep(x) Sleep(x/1000)
 #endif
 

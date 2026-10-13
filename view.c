@@ -558,7 +558,9 @@ void battleFieldClear()
  */
 void refreshScreen()
 {
-	redrawwin(wBattleField); // needed to display graphics properly at startup on some terminals
+	// Asciiverse: only what changed is sent; the full repaint that some
+	// terminals need at startup is done once, in battleFieldCentre, and
+	// again after a resize, not 50 times a second
 	wrefresh(wBattleField);
 
 }	

@@ -238,3 +238,12 @@ void playerExplode(){
 	playerExplosionDisplay(player.posX, player.posY);
 	playerDisplay(player.posX, player.posY);
 }
+
+
+/**
+ * Asciiverse: draw the player again where it is (after a resize)
+ */
+void playerRedraw()
+{
+	playerDisplay(player.posX, player.posY);
+}

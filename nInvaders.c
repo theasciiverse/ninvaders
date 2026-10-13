@@ -144,6 +144,22 @@ void readInput()
 	if (ch == ERR) {	// Asciiverse: no key before the next tick
 		return;
 	}
+	if (ch == KEY_RESIZE) {	// Asciiverse: centre in the new size
+#ifdef PDCURSES
+		resize_term(0, 0);
+#endif
+		battleFieldCentre();
+		// what a shrunken window lost is drawn again; the title and
+		// game over screens redraw themselves
+		if (status == GAME_LOOP || status == GAME_PAUSED) {
+			drawscore();
+			bunkersDisplay(&bunker[0][0]);
+			playerRedraw();
+			aliensDisplay(aliens.posX, aliens.posY, aliens.right, aliens.bottom);
+			refreshScreen();
+		}
+		return;
+	}
 
 	switch (status) {
 

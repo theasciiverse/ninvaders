@@ -518,7 +518,29 @@ static void battleFieldInit()
 	
 	wBattleField = newwin(SCREENHEIGHT, SCREENWIDTH, 0, 0);	// new window
 	wclear(wBattleField);						// clear window
-	mvwin(wBattleField, 0, 0);					// move window
+	battleFieldCentre();						// move window
+}
+
+
+/**
+ * Asciiverse: show the battlefield centred in the terminal, and centre it
+ * again after a resize; a terminal smaller than the battlefield shows it
+ * from the top left, as before
+ */
+void battleFieldCentre()
+{
+	int y = LINES > SCREENHEIGHT ? (LINES - SCREENHEIGHT) / 2 : 0;
+	int x = COLS > SCREENWIDTH ? (COLS - SCREENWIDTH) / 2 : 0;
+
+	// ncurses shrinks a window that no longer fits: grow it back
+	if (getmaxy(wBattleField) < SCREENHEIGHT || getmaxx(wBattleField) < SCREENWIDTH) {
+		wresize(wBattleField, SCREENHEIGHT, SCREENWIDTH);
+	}
+	clear();			// blank the old place
+	refresh();
+	mvwin(wBattleField, y, x);
+	redrawwin(wBattleField);
+	wrefresh(wBattleField);
 }
 
 

@@ -57,6 +57,7 @@ void aliensMissileClear(int x, int y);
 void aliensMissileDisplay(int x, int y);
 void aliensRefresh(int level, int *pAliens);
 void battleFieldClear();
+void battleFieldCentre();
 void bunkersClear();
 void bunkersClearElement(int x, int y);
 void bunkersDisplay(int *pBunker);

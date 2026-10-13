@@ -51,5 +51,7 @@ extern void bunkersClearElement(int x, int y);
 
 extern void doScoring(int alienType);
 	
+void playerRedraw();
+
 #endif
 

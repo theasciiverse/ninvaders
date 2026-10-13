@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
+#include <time.h>
 #include "nInvaders.h"
 #include "player.h"
 #include "aliens.h"
@@ -397,6 +398,11 @@ int main(int argc, char **argv)
 	skill_level = 1;
 
 	evaluateCommandLine(argc, argv);	// evaluate command line parameters
+
+	// Asciiverse: seed the random numbers, so that each game plays out
+	// differently (the game never seeded them, so every game was the same)
+	srandom((unsigned) time(NULL));
+	srand((unsigned) time(NULL));
 	graphicEngineInit();			// initialize graphic engine
 
 	highscore = readHighScore();		// load highscore (from the 2003 CVS work)

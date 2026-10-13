@@ -33,6 +33,7 @@
 
 #ifdef _WIN32
 #define random() rand()		/* Windows has no BSD random() */
+#define srandom(s) srand(s)
 #endif
 
 #define UFO_ALIEN_TYPE   0

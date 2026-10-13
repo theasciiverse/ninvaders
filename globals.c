@@ -122,7 +122,9 @@ void showGpl()
 
 	FILE	*GPL;
 
-	char    gpl_file[] = "/usr/share/common-licenses/GPL";
+	// Asciiverse: the gpl.txt shipped beside the game first (av starts a
+	// title in its install folder), then Debian's copy
+	char    *gpl_file = "gpl.txt";
 	char    *buff = NULL;
 	char    *check = NULL;
 
@@ -131,8 +133,11 @@ void showGpl()
 	int     count = 0;
 
 	if (!(GPL = fopen(gpl_file, "r"))) {
-		perror("gpl():\t");
-		return;
+		gpl_file = "/usr/share/common-licenses/GPL";
+		if (!(GPL = fopen(gpl_file, "r"))) {
+			perror("gpl():\t");
+			return;
+		}
 	}
 
 	if (!(buff = calloc(buff_size, sizeof(char)))) {

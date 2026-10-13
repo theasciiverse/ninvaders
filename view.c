@@ -24,6 +24,7 @@
 
 #include "view.h"
 #include "globals.h"
+#include "highscore.h"
 #include <stdlib.h>	
 #include <unistd.h>
 #include <signal.h>
@@ -386,15 +387,19 @@ static void titleScreenInit()
 
 
 /**
- * display title screen
+ * display title screen: the alien legend, alternating with the high score
+ * table (high score table by Alexander Hollinger and Sebastian Gutsfeld,
+ * from the project's CVS, 2003; the table shown is the one the chosen skill
+ * level plays for)
  */
-void titleScreenDisplay()
+void titleScreenDisplay(int hsType)
 {
 	static int frame = 0;
 	int x, y;
 	int i;
 	WINDOW *wTitleText;
 	WINDOW *wAliens;
+	WINDOW *wHighscore;
 	WINDOW *wStartText;
 	char ufo[4][6] = {"<o o>", "<oo >", "<o o>", "< oo>"};
 	char aliens[2][9][3+1] = {
@@ -404,8 +409,31 @@ void titleScreenDisplay()
 	int score[3] = {200, 150, 100};
 	int colors[9] = {RED, GREEN, BLUE, RED, GREEN, BLUE, RED, GREEN, BLUE};
 	char buffer[12];
+	char highscoreBuffer[25];
 	static int alien_type = 0;
+	static int fShowHighscore = 0;
+	HighScoreEntry *table = highscoreEntries(hsType);
 
+	/* toggle between different alien types and highscores */
+	frame = (frame + 1) % 180;
+	if (frame == 0) {
+		alien_type = 0;
+		fShowHighscore = 0;
+	} else if (frame == 30) {
+		fShowHighscore = 1;
+	} else if (frame == 60) {
+		alien_type = 3;
+		fShowHighscore = 0;
+	} else if (frame == 90) {
+		fShowHighscore = 1;
+	} else if (frame == 120) {
+		alien_type = 6;
+		fShowHighscore = 0;
+	} else if (frame == 150) {
+		fShowHighscore = 1;
+	}
+
+	/* big title */
 	wTitleText = newpad(4, 41);
 	wclear(wTitleText);
 	wattrset(wTitleText, COLOR_PAIR(YELLOW));
@@ -414,45 +442,104 @@ void titleScreenDisplay()
         waddstr(wTitleText, " / _ \\_/ // _ \\ |/ / _ `/ _  / -_) __(_-<");
 	waddstr(wTitleText, "/_//_/___/_//_/___/\\_,_/\\_,_/\\__/_/ /___/");
 
-	frame++;
 	wAliens = newpad(7, 11);
-	wclear(wAliens);
-	snprintf(buffer, sizeof(buffer),"%s = 500", ufo[frame % 4]);
-	wattrset(wAliens, COLOR_PAIR(MAGENTA));
-	waddstr(wAliens, buffer);
-	if ((frame = frame % 60) == 0) {
-		alien_type = 0;
-	} else if (frame == 20) {
-		alien_type = 3;
-	} else if (frame == 40) {
-		alien_type = 6;
-	}
-	for (i = alien_type; i < alien_type + 3; i++) {
-		waddstr(wAliens, "           ");
-		snprintf(buffer, sizeof(buffer), "%s   = %d", aliens[frame % 2][i], score[i % 3]);
-		wattrset(wAliens, COLOR_PAIR(colors[i]));
-		waddstr(wAliens, buffer);
+	wHighscore = newpad(12, 24);
+	if (fShowHighscore == 0) {
+
+		/* alien animation with score */
+		wclear(wAliens);
+		snprintf(buffer, sizeof(buffer),"%s = 500", ufo[frame % 4]);
+		wattrset(wAliens, COLOR_PAIR(MAGENTA));
+		waddstr(wAliens, buffer); // print ufo
+
+		for (i = alien_type; i < alien_type + 3; i++) {
+			waddstr(wAliens, "           ");
+			snprintf(buffer, sizeof(buffer), "%s   = %d", aliens[frame % 2][i], score[i % 3]);
+			wattrset(wAliens, COLOR_PAIR(colors[i]));
+			waddstr(wAliens, buffer); // print aliens
+		}
+
+	} else {
+
+		/* highscore: names dotted out to one column of scores */
+		wclear(wHighscore);
+		wattrset(wHighscore, COLOR_PAIR(WHITE));
+		waddstr(wHighscore, "         TOP 10         ");
+		waddstr(wHighscore, "                        ");
+		for (i = 0; i < MAX_HIGHSCORE_ENTRIES; i++) {
+			int n = snprintf(highscoreBuffer, sizeof(highscoreBuffer), "%s", table[i].name);
+			for (; n < 17; n++) {
+				highscoreBuffer[n] = '.';
+			}
+			snprintf(highscoreBuffer + 17, sizeof(highscoreBuffer) - 17, "%7.7d", table[i].score);
+			waddstr(wHighscore, highscoreBuffer);
+		}
+
 	}
 
+	/* info text */
 	wStartText = newpad(1, 20);
 	wclear(wStartText);
 	wattrset(wStartText, COLOR_PAIR(RED));
 	waddstr(wStartText, "Press SPACE to start");
-	
+
+	/* place title, aliens or highscore and text on wTitleScreen */
 	x = (SCREENWIDTH / 2) - (41 / 2);
 	y = 0;
 	copywin(wTitleText, wTitleScreen, 0, 0, y, x, y + 3, x + 40, 0);
 
-	x = (SCREENWIDTH / 2) - (11 / 2);
-	y = 8;
-	copywin(wAliens, wTitleScreen, 0, 0, y, x , y + 6, x + 10, 0);
+	if (fShowHighscore == 0) {
+		x = (SCREENWIDTH / 2) - (24 / 2);
+		y = 6;
+		copywin(wEmpty, wTitleScreen, 0, 0, y, x , y + 11, x + 23, 0);
+
+		x = (SCREENWIDTH / 2) - (11 / 2);
+		y = 8;
+		copywin(wAliens, wTitleScreen, 0, 0, y, x , y + 6, x + 10, 0);
+	} else {
+		x = (SCREENWIDTH / 2) - (11 / 2);
+		y = 8;
+		copywin(wEmpty, wTitleScreen, 0, 0, y, x , y + 6, x + 10, 0);
+
+		x = (SCREENWIDTH / 2) - (24 / 2);
+		y = 6;
+		copywin(wHighscore, wTitleScreen, 0, 0, y, x , y + 11, x + 23, 0);
+	}
 
 	x = (SCREENWIDTH / 2) - (20 / 2);
 	y = SCREENHEIGHT - 2;
 	copywin(wStartText, wTitleScreen, 0, 0, y, x, y, x + 19, 0);
 	
 	copywin(wTitleScreen, wBattleField, 0, 0, 0, 0, SCREENHEIGHT-1, SCREENWIDTH-1, 0);
+
+	// Asciiverse: the pads are made anew each frame, so free them
+	delwin(wTitleText);
+	delwin(wAliens);
+	delwin(wHighscore);
+	delwin(wStartText);
 	
+	wrefresh(wBattleField);
+}
+
+
+/**
+ * Asciiverse: ask for a name for the high score table, below the game over
+ * banner (the 2003 table had no way to enter one yet)
+ */
+void highscoreEntryDisplay(const char *name, int score)
+{
+	char line[32];
+	int x = (SCREENWIDTH / 2) - (24 / 2);
+	int y = (SCREENHEIGHT / 2) + 7;
+
+	wattrset(wBattleField, COLOR_PAIR(YELLOW));
+	snprintf(line, sizeof(line), "NEW HIGH SCORE: %7.7d", score);
+	mvwaddstr(wBattleField, y, x, line);
+	wattrset(wBattleField, COLOR_PAIR(WHITE));
+	snprintf(line, sizeof(line), "Your name: %-8s_   ", name);
+	mvwaddstr(wBattleField, y + 1, x, line);
+	wattrset(wBattleField, COLOR_PAIR(RED));
+	mvwaddstr(wBattleField, y + 2, x, "Press ENTER to save    ");
 	wrefresh(wBattleField);
 }
 

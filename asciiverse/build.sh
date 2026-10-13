@@ -16,5 +16,5 @@ LDFLAGS="${LDFLAGS:-}"
 LIBS="${LIBS:--lncursesw}"
 EXE="${EXE:-}"
 mkdir -p out
-$CC $CFLAGS -Wall -Wno-unused-result -I. globals.c view.c aliens.c ufo.c player.c nInvaders.c $LDFLAGS $LIBS -o "out/ninvaders$EXE"
+$CC $CFLAGS -Wall -Wno-unused-result -I. globals.c view.c aliens.c ufo.c player.c highscore.c nInvaders.c $LDFLAGS $LIBS -o "out/ninvaders$EXE"
 echo "built ninvaders$EXE"

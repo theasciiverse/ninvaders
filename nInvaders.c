@@ -29,6 +29,7 @@
 #include "player.h"
 #include "aliens.h"
 #include "ufo.h"
+#include "highscore.h"
 
 #define FPS 50
 
@@ -40,12 +41,17 @@ int weite;
 int level;
 int skill_level;
 
+static char entryName[SIZE_HIGHSCORE_NAME + 1];	// Asciiverse: the name being typed
+static int entryGrace;	// Asciiverse: ticks before typing counts, so keys still held from play do not
+			// end up in the name
+
 #define GAME_LOOP 1
 #define GAME_NEXTLEVEL 2
 #define GAME_PAUSED 3
 #define GAME_OVER 4
 #define GAME_EXIT 5
 #define GAME_HIGHSCORE 6
+#define GAME_ENTERNAME 7	// Asciiverse: a name for the high score table
 
 
 
@@ -157,6 +163,9 @@ void readInput()
 			playerRedraw();
 			aliensDisplay(aliens.posX, aliens.posY, aliens.right, aliens.bottom);
 			refreshScreen();
+		} else if (status == GAME_ENTERNAME) {
+			gameOverDisplay();
+			highscoreEntryDisplay(entryName, score);
 		}
 		return;
 	}
@@ -185,6 +194,30 @@ void readInput()
 
 	case GAME_OVER:
 		break; // don't do anything
+
+	case GAME_ENTERNAME:	// Asciiverse: type a name, ENTER saves it
+
+		if (entryGrace > 0) {
+			break;
+		}
+		if (ch == '\r' || ch == '\n' || ch == KEY_ENTER) {
+			addEntry(entryName[0] != '\0' ? entryName : "player", score, highscoreTable(skill_level));
+			writeHighScore(highscore);
+			battleFieldClear();
+			status = GAME_HIGHSCORE;
+		} else if (ch == KEY_BACKSPACE || ch == 127 || ch == 8) {
+			size_t n = strlen(entryName);
+			if (n > 0) {
+				entryName[n - 1] = '\0';
+			}
+			highscoreEntryDisplay(entryName, score);
+		} else if (ch > ' ' && ch < 127 && strlen(entryName) < SIZE_HIGHSCORE_NAME) {
+			size_t n = strlen(entryName);
+			entryName[n] = (char) ch;
+			entryName[n + 1] = '\0';
+			highscoreEntryDisplay(entryName, score);
+		}
+		break;
 
 	default:
 
@@ -303,11 +336,25 @@ void handleTimer(int _sig)
 	case GAME_PAUSED:    // game is paused
 		break;
 
+	case GAME_ENTERNAME: // waiting for a name
+		if (entryGrace > 0 && --entryGrace == 0) {
+			flushinp();	// what was typed during the grace is dropped
+		}
+		break;
+
 	case GAME_OVER:      // game over
 		if (game_over_counter == 100) {
+			game_over_counter = 0;
+			// Asciiverse: a score for the table asks for a name first
+			if (highscoreQualifies(score, highscoreTable(skill_level))) {
+				entryName[0] = '\0';
+				entryGrace = FPS;	// one second
+				highscoreEntryDisplay(entryName, score);
+				status = GAME_ENTERNAME;
+				break;
+			}
 			battleFieldClear();
 			status = GAME_HIGHSCORE;
-			game_over_counter = 0;
 		} else {
 			gameOverDisplay();
 			game_over_counter++;
@@ -320,7 +367,7 @@ void handleTimer(int _sig)
 
 	case GAME_HIGHSCORE: // display highscore
 		if (title_animation_counter == 0) {
-			titleScreenDisplay();
+			titleScreenDisplay(highscoreTable(skill_level));
 		}
 
 		if (title_animation_counter++ >= 6) {title_animation_counter = 0;} // speed of animation
@@ -351,6 +398,8 @@ int main(int argc, char **argv)
 
 	evaluateCommandLine(argc, argv);	// evaluate command line parameters
 	graphicEngineInit();			// initialize graphic engine
+
+	highscore = readHighScore();		// load highscore (from the 2003 CVS work)
 
 	status = GAME_HIGHSCORE;
 

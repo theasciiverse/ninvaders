@@ -141,6 +141,9 @@ void readInput()
 	static int lastmove;
 
 	ch = getch();		// get key pressed
+	if (ch == ERR) {	// Asciiverse: no key before the next tick
+		return;
+	}
 
 	switch (status) {
 
@@ -312,21 +315,13 @@ void handleTimer(int _sig)
 
 
 /**
- * set up timer
+ * Asciiverse: microseconds from a steady point, for the game loop in main
  */
-void setUpTimer()
+static long long nowUsec(void)
 {
-	struct itimerval myTimer;
-	struct sigaction myAction;
-	myTimer.it_value.tv_sec = 0;
-	myTimer.it_value.tv_usec = 1000000 / FPS;
-	myTimer.it_interval.tv_sec = 0;
-	myTimer.it_interval.tv_usec = 1000000 / FPS;
-	setitimer(ITIMER_REAL, &myTimer, NULL);
-
-	myAction.sa_handler = &handleTimer;
-	myAction.sa_flags = SA_RESTART;
-	sigaction(SIGALRM, &myAction, NULL);
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	return (long long)tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
 
@@ -341,15 +336,26 @@ int main(int argc, char **argv)
 	evaluateCommandLine(argc, argv);	// evaluate command line parameters
 	graphicEngineInit();			// initialize graphic engine
 
-	// set up timer/ game handling
-	setUpTimer();
 	status = GAME_HIGHSCORE;
 
-	// read keyboard input
-	do {
-		// do movements and key-checking
-		readInput();
-	} while (0 == 0);
+	// Asciiverse: the game ticks in this loop rather than from a SIGALRM
+	// timer, so no curses call runs inside a signal handler and it also
+	// runs where there is no setitimer (Windows). Keys are waited for at
+	// most until the next tick, every 1 / FPS seconds.
+	long long next = nowUsec();
+	for (;;) {
+		long long left = next - nowUsec();
+		if (left <= 0) {
+			handleTimer(0);
+			next += 1000000 / FPS;
+			if (nowUsec() - next > 1000000) {	// after a stall, do not race to catch up
+				next = nowUsec();
+			}
+			continue;
+		}
+		timeout((int)((left + 999) / 1000));
+		readInput();	// do movements and key-checking
+	}
 
 	return 0;
 }

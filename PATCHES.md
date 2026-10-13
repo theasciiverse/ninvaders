@@ -9,9 +9,29 @@ ninvaders.sourceforge.net). History here starts from the release tarball
 bfbc5c378704d9cf5e7fed288dac88859149bee5ed0850175759d310b61fd30b, the same
 file Debian distributes as ninvaders_0.1.1.orig.tar.gz), tagged `0.1.1`.
 
-SourceForge's CVS (code snapshot ninvaders.zip) holds later, unreleased
-work from May to October 2003: a high score table (highscore.c) and an
-autoconf build. It is not included here.
+## The CVS history (branch `cvs`)
+
+SourceForge's CVS holds the project's whole history, 2003-04-04 to
+2003-10-17, including unreleased work after 0.1.1. It is here as branch
+`cvs` (tag `cvs-head`), not joined to `master`: 66 commits converted with
+cvs-fast-export from SourceForge's code snapshot
+(https://sourceforge.net/code-snapshots/cvs/n/ni/ninvaders.zip, sha256
+84b415e3f4f4e8916f9da1ee14f042e95c9f5e7f4edf2fff0ab35d436755f020), dated
+in German time. CVS users are given the names in the project's own files:
+hollinge is Alexander Hollinger and segoh Sebastian Gutsfeld (both from
+ChangeLog); senorhoss, who made the initial import and signed the project's
+web page, is kept under that SourceForge name, since nothing in the files
+says who it is.
+
+After 0.1.1 (2003-05-08) the CVS has:
+
+- a high score table (file.c, then highscore.c and highscore.h, Alexander
+  Hollinger and Sebastian Gutsfeld, May to September 2003) and a title
+  screen alternating the alien legend with the TOP 10: ported, see below
+- an autoconf build (configure, configure.in, Makefile.in, October 2003):
+  not taken, the build here is asciiverse/build.sh
+- gpl.txt renamed LICENSE: not taken, nothing reads that name
+- no other changes to the game
 
 ## Debian's patches
 
@@ -51,8 +71,28 @@ no `debian` remote.
   the game's version 2. It now reads the gpl.txt beside the game first.
 - **Windows.** Builds with MinGW against PDCurses: <curses.h> instead of
   <ncurses.h>, <windows.h> for Sleep(), and rand() for BSD random().
-- nInvaders 0.1.1 writes no files (no high scores, no settings), so there
-  is nothing to move to the player's data folder.
+- **The high score table, from the CVS, finished.** The 2003 table
+  (credited to Alexander Hollinger and Sebastian Gutsfeld in the commit) was
+  never finished: entries came only from a debug key, and it was saved at
+  an exit the game never reached. Now a score that makes the TOP 10 asks
+  for a name after the game over banner (up to 8 characters, ENTER saves,
+  an empty name is "player"; keys in the first second are ignored, so keys
+  still held from play do not end up in it; quitting with q records
+  nothing), and the table is saved at once to the player's data folder:
+  `$XDG_DATA_HOME/ninvaders/highscore` (else
+  `~/.local/share/ninvaders/highscore`), or `%APPDATA%\ninvaders\highscore`
+  on Windows. Skill 0 plays for the expert table, the default 1 for the
+  normal one and 2 to 9 for the beginner one, and the title screen shows
+  the table being played for. Fixed in the 2003 code: addEntry wrote past
+  the end of the table; names were read with no length limit; the table
+  was defined in the header (a link error since GCC 10); a damaged or
+  edited file is checked line by line and the standard table (the
+  authors' own names) used instead; no error messages over the curses
+  screen. The title screen also made four curses pads every frame and never
+  freed them.
+- **Seeded random numbers.** The game never seeded them, so the aliens'
+  bombs and the UFO came the same way in every game. They are seeded from
+  the clock at startup.
 
 ## Packaging (new files)
 
@@ -63,8 +103,8 @@ no `debian` remote.
   for Debian "but may be used by others".
 - `asciiverse/record.py`, `asciiverse/ninvaders.cast`: the catalog preview
   (100x30, 45 s) and the player that recorded it, reading the screen
-  through pyte: it aims at the alien columns, dodges bombs and leads its
-  shot at the UFO.
+  through pyte: it waits on the title until its TOP 10 has shown, then
+  aims at the alien columns, dodges bombs and leads its shot at the UFO.
 - `.github/workflows/release.yml`: static Linux in Alpine (x86_64,
   aarch64), macOS (x86_64, arm64) and Windows x86_64 (MinGW, PDCurses),
   plus SHA256SUMS, on a tag.

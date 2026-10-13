@@ -11,7 +11,7 @@ pyte installed:
 The game runs by name from out/ on PATH, so the cast's header holds no local
 path. The cast goes to asciiverse/ninvaders.cast.
 """
-import fcntl, os, pty, select, shutil, struct, sys, tempfile, termios, time
+import fcntl, os, pty, re, select, shutil, struct, sys, tempfile, termios, time
 
 import pyte
 
@@ -47,6 +47,9 @@ class Rec:
         env = {
             "PATH": f"{os.path.join(ROOT, 'out')}:{os.environ['PATH']}",
             "HOME": self.home,
+            "XDG_DATA_HOME": os.path.join(self.home, "data"),
+            "USER": "player",
+            "LOGNAME": "player",
             "TERM": "xterm-256color",
             "COLORTERM": "truecolor",
             "LANG": "C.UTF-8",
@@ -108,7 +111,10 @@ def field(rec):
 
 def look(rows):
     """Player x (left edge), alien columns, bombs, the UFO and our missile."""
-    player = rows[PLAYER_ROW].find("/-^-\\")
+    # the ship is /-^-\ ; a bomb passing beside it can blank one of its
+    # cells until it next moves or fires, so find it by its shape loosely
+    m = re.search(r"/[- ]\^[- ]\\", rows[PLAYER_ROW])
+    player = m.start() if m else -1
     bombs = [(x, y) for y in range(FIELD_H - 1) for x, c in enumerate(rows[y]) if c == ":"]
     missile = any("!" in rows[y] for y in range(FIELD_H - 2))
     cols = set()
@@ -127,7 +133,7 @@ def danger(x, bombs):
 
 def main():
     rec = Rec()
-    rec.pump(3.0)                   # the title screen, animated
+    rec.pump(7.5)                   # the title screen, animated; its TOP 10 shows from about 4 s
     rec.key(" ", 0.6)               # start
     end = rec.start + LENGTH
     while time.time() < end:

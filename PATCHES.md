@@ -93,6 +93,9 @@ no `debian` remote.
 - **Seeded random numbers.** The game never seeded them, so the aliens'
   bombs and the UFO came the same way in every game. They are seeded from
   the clock at startup.
+- **How to play it, at the top of README.** A short note on installing and
+  starting it with av, or from a release archive; the original text follows
+  unchanged.
 
 ## Packaging (new files)
 

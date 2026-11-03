@@ -1,7 +1,9 @@
 # Builds nInvaders for the Asciiverse catalog: one archive per target,
 # ninvaders-<target>.tar.gz (.zip on Windows), plus SHA256SUMS, attached to
 # a GitHub release (hub/catalog/SCHEMA.md, release.source = "github"). Runs
-# on a pushed tag, or by hand for an existing tag.
+# on a pushed release tag, upstream's version then ours (0.1.1-av.1), or by
+# hand for an existing one; upstream's and Debian's tags have no build
+# scripts.
 #
 # Linux builds run in Alpine and link ncurses statically, so the binaries
 # carry the -musl triple av looks for first and need no libncurses on the
@@ -12,7 +14,7 @@ name: release
 
 on:
   push:
-    tags: ["*"]
+    tags: ["*-av.*"]
   workflow_dispatch:
     inputs:
       tag:
